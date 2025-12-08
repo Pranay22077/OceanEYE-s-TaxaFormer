@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Download, Search, Filter, Copy, ChevronDown, 
   FileText, AlertCircle, TrendingUp, Database, Layers, 
@@ -21,8 +21,8 @@ interface OutputPageProps {
   onNavigate: (page: string) => void;
 }
 
-// Mock data for the analysis results
-const taxonomySummary = [
+// Default mock data (fallback if no real data)
+const defaultTaxonomySummary = [
   { name: 'Alveolata', value: 142, color: '#22D3EE' },
   { name: 'Chlorophyta', value: 89, color: '#10B981' },
   { name: 'Fungi', value: 34, color: '#A78BFA' },
@@ -31,7 +31,7 @@ const taxonomySummary = [
   { name: 'Unknown', value: 23, color: '#64748B' }
 ];
 
-const taxonomyTableData = [
+const defaultTaxonomyTableData = [
   { accession: 'SEQ_001', taxonomy: 'Alveolata; Dinoflagellata; Gymnodiniales', length: 1842, confidence: 0.94, overlap: 87, cluster: 'C1' },
   { accession: 'SEQ_002', taxonomy: 'Chlorophyta; Chlorophyceae; Chlamydomonadales', length: 1654, confidence: 0.89, overlap: 92, cluster: 'C2' },
   { accession: 'SEQ_003', taxonomy: 'Metazoa; Arthropoda; Copepoda', length: 2103, confidence: 0.96, overlap: 94, cluster: 'C3' },
@@ -42,7 +42,7 @@ const taxonomyTableData = [
   { accession: 'SEQ_008', taxonomy: 'Fungi; Ascomycota; Eurotiomycetes', length: 1745, confidence: 0.88, overlap: 85, cluster: 'C5' },
 ];
 
-const clusterData = [
+const defaultClusterData = [
   { x: 12.5, y: 8.3, z: 142, cluster: 'Alveolata', color: '#22D3EE' },
   { x: -8.2, y: 15.1, z: 89, cluster: 'Chlorophyta', color: '#10B981' },
   { x: 3.4, y: -12.7, z: 67, cluster: 'Metazoa', color: '#F59E0B' },
@@ -51,12 +51,146 @@ const clusterData = [
   { x: -2.1, y: -18.5, z: 23, cluster: 'Unknown', color: '#64748B' },
 ];
 
+// Helper function to validate and sanitize taxonomy summary data
+const validateTaxonomySummary = (data: any[]): any[] => {
+  if (!Array.isArray(data)) return [];
+  
+  return data.map(item => ({
+    name: String(item.name || 'Unknown'),
+    value: Number(item.value) || 0,
+    color: String(item.color || '#64748B')
+  })).filter(item => item.value > 0);
+};
+
+// Helper function to transform various JSON formats
+const transformBackendData = (rawData: any) => {
+  console.log('🔄 Transforming backend data...');
+  
+  const transformed: any = {
+    taxonomy_summary: [],
+    sequences: [],
+    cluster_data: [],
+    metadata: {}
+  };
+  
+  // Try to extract sequences/results
+  const sequenceData = rawData.sequences || rawData.results || rawData.classifications || (Array.isArray(rawData) ? rawData : []);
+  
+  if (sequenceData.length > 0) {
+    transformed.sequences = sequenceData.map((seq: any, idx: number) => ({
+      accession: seq.accession || seq.id || seq.sequence_id || `SEQ_${String(idx + 1).padStart(3, '0')}`,
+      taxonomy: seq.taxonomy || seq.classification || seq.taxon || 'Unknown',
+      length: seq.length || seq.seq_length || 0,
+      confidence: seq.confidence || seq.score || 0,
+      overlap: seq.overlap || seq.coverage || 0,
+      cluster: seq.cluster || seq.cluster_id || 'C1'
+    }));
+    
+    // Generate taxonomy summary from sequences if not provided
+    if (!rawData.taxonomy_summary && !rawData.taxonomySummary) {
+      const taxonomyCounts: any = {};
+      const colors = ['#22D3EE', '#10B981', '#A78BFA', '#F59E0B', '#EC4899', '#64748B'];
+      
+      sequenceData.forEach((seq: any) => {
+        const taxon = (seq.taxonomy || seq.classification || 'Unknown').split(';')[0].trim();
+        taxonomyCounts[taxon] = (taxonomyCounts[taxon] || 0) + 1;
+      });
+      
+      transformed.taxonomy_summary = Object.entries(taxonomyCounts).map(([name, value], idx) => ({
+        name,
+        value: Number(value) || 0,
+        color: colors[idx % colors.length]
+      }));
+    }
+  }
+  
+  // Extract taxonomy summary (validate to ensure proper format)
+  if (rawData.taxonomy_summary || rawData.taxonomySummary || rawData.taxonomy) {
+    const rawTaxonomy = rawData.taxonomy_summary || rawData.taxonomySummary || rawData.taxonomy;
+    transformed.taxonomy_summary = validateTaxonomySummary(rawTaxonomy);
+  }
+  
+  // Extract cluster data
+  if (rawData.cluster_data || rawData.clusterData || rawData.clusters) {
+    transformed.cluster_data = rawData.cluster_data || rawData.clusterData || rawData.clusters;
+  }
+  
+  // Extract metadata
+  transformed.metadata = {
+    sampleName: rawData.metadata?.sampleName || rawData.sampleName || rawData.sample_name || rawData.filename || 'Sample',
+    totalSequences: rawData.metadata?.totalSequences || rawData.totalSequences || rawData.total_sequences || rawData.sequence_count || sequenceData.length,
+    processingTime: rawData.metadata?.processingTime || rawData.processingTime || rawData.processing_time || rawData.time || 'N/A',
+    avgConfidence: rawData.metadata?.avgConfidence || rawData.avgConfidence || rawData.avg_confidence || rawData.confidence || 0
+  };
+  
+  console.log('✅ Transformation complete:', {
+    taxonomyCount: transformed.taxonomy_summary.length,
+    sequenceCount: transformed.sequences.length,
+    clusterCount: transformed.cluster_data.length
+  });
+  
+  return transformed;
+};
+
 export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) {
   const [selectedTab, setSelectedTab] = useState<'embedding' | 'clusters'>('embedding');
   const [selectedSequence, setSelectedSequence] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  
+  // State for real data from API
+  const [taxonomySummary, setTaxonomySummary] = useState(defaultTaxonomySummary);
+  const [taxonomyTableData, setTaxonomyTableData] = useState(defaultTaxonomyTableData);
+  const [clusterData, setClusterData] = useState(defaultClusterData);
+  const [analysisMetadata, setAnalysisMetadata] = useState({
+    sampleName: 'DeepSea_01',
+    totalSequences: 400,
+    processingTime: '2.3s',
+    avgConfidence: 89
+  });
+
+  // Load real data from localStorage on mount
+  useEffect(() => {
+    const storedData = localStorage.getItem('analysisResults');
+    if (storedData) {
+      try {
+        const rawResults = JSON.parse(storedData);
+        console.log('📊 Raw Analysis Results:', rawResults);
+        console.log('📋 Result Keys:', Object.keys(rawResults));
+        
+        // Transform the data to match UI format
+        const transformed = transformBackendData(rawResults);
+        
+        // Update state with transformed data (with validation)
+        if (transformed.taxonomy_summary && transformed.taxonomy_summary.length > 0) {
+          const validatedTaxonomy = validateTaxonomySummary(transformed.taxonomy_summary);
+          if (validatedTaxonomy.length > 0) {
+            setTaxonomySummary(validatedTaxonomy);
+          }
+        }
+        
+        if (transformed.sequences && transformed.sequences.length > 0) {
+          setTaxonomyTableData(transformed.sequences);
+        }
+        
+        if (transformed.cluster_data && transformed.cluster_data.length > 0) {
+          setClusterData(transformed.cluster_data);
+        }
+        
+        if (transformed.metadata) {
+          setAnalysisMetadata(transformed.metadata);
+        }
+        
+        console.log('✅ Data loaded and transformed successfully');
+      } catch (error) {
+        console.error('❌ Failed to parse analysis results:', error);
+        console.error('Error details:', error);
+      }
+    } else {
+      console.log('ℹ️ No stored results found, using default mock data');
+    }
+  }, []);
 
   const handleCopySequence = (seq: string) => {
     navigator.clipboard.writeText(seq);
@@ -94,7 +228,7 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
                   Sample
                 </div>
                 <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  DeepSea_01
+                  {analysisMetadata.sampleName}
                 </div>
               </div>
               <div>
@@ -102,7 +236,7 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
                   Sequences
                 </div>
                 <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  400
+                  {analysisMetadata.totalSequences}
                 </div>
               </div>
               <div>
@@ -110,7 +244,7 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
                   Time
                 </div>
                 <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  2.3s
+                  {analysisMetadata.processingTime}
                 </div>
               </div>
               <div>
@@ -118,7 +252,7 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
                   Confidence
                 </div>
                 <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  89%
+                  {analysisMetadata.avgConfidence}%
                 </div>
               </div>
             </div>

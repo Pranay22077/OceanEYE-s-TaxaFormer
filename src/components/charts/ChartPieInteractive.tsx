@@ -36,17 +36,25 @@ interface ChartPieInteractiveProps {
 export function ChartPieInteractive({ data, title, description, isDarkMode }: ChartPieInteractiveProps) {
   const id = "pie-interactive"
   
-  // Transform data to match chart format
-  const chartData = data.map(item => ({
-    category: item.name,
-    value: item.value,
-    fill: item.color
-  }))
+  // Transform data to match chart format with validation
+  const chartData = React.useMemo(() => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return [{ category: 'No Data', value: 0, fill: '#64748B' }];
+    }
+    return data.map(item => ({
+      category: String(item.name || 'Unknown'),
+      value: Number(item.value) || 0,
+      fill: String(item.color || '#64748B')
+    })).filter(item => item.value > 0);
+  }, [data]);
 
-  const [activeCategory, setActiveCategory] = React.useState(chartData[0].category)
+  const [activeCategory, setActiveCategory] = React.useState(chartData[0]?.category || 'No Data')
 
   const activeIndex = React.useMemo(
-    () => chartData.findIndex((item) => item.category === activeCategory),
+    () => {
+      const index = chartData.findIndex((item) => item.category === activeCategory);
+      return index >= 0 ? index : 0;
+    },
     [activeCategory, chartData]
   )
   
@@ -153,7 +161,7 @@ export function ChartPieInteractive({ data, title, description, isDarkMode }: Ch
                           y={viewBox.cy}
                           className={`text-3xl font-bold ${isDarkMode ? 'fill-white' : 'fill-slate-900'}`}
                         >
-                          {chartData[activeIndex].value.toLocaleString()}
+                          {(chartData[activeIndex]?.value || 0).toLocaleString()}
                         </tspan>
                         <tspan
                           x={viewBox.cx}

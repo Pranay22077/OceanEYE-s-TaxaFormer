@@ -1,5 +1,10 @@
-import { useState } from 'react';
-import { Upload, FileText, Database, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Upload, FileText, Database, ChevronRight, Loader2, Cpu, Zap, Brain, CheckCircle2 } from 'lucide-react';
+
+// 🛑 STEP 1: PASTE YOUR NGROK URL HERE
+// Leave empty to use mock data for testing
+// Set to "" to test UI without backend, or paste your active ngrok URL
+const API_URL: string = "https://unexcited-nondepreciatively-justice.ngrok-free.dev";
 
 interface UploadPageProps {
   isDarkMode: boolean;
@@ -8,7 +13,55 @@ interface UploadPageProps {
 
 export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  // CHANGED: We now store the actual File object, not just the name string
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  // Loading stages with messages
+  const loadingStages = [
+    { icon: Upload, text: "Uploading sequences to GPU cluster...", color: "cyan" },
+    { icon: Cpu, text: "Initializing Nucleotide Transformer model...", color: "blue" },
+    { icon: Brain, text: "Processing DNA sequences on GPU...", color: "purple" },
+    { icon: Zap, text: "Running taxonomic classification...", color: "pink" },
+    { icon: Database, text: "Matching against marine databases...", color: "indigo" },
+    { icon: CheckCircle2, text: "Finalizing results...", color: "green" }
+  ];
+
+  // Simulate loading progress
+  useEffect(() => {
+    if (isLoading) {
+      setLoadingStage(0);
+      setProgress(0);
+
+      const stageInterval = setInterval(() => {
+        setLoadingStage(prev => {
+          if (prev < loadingStages.length - 1) {
+            return prev + 1;
+          }
+          return prev;
+        });
+      }, 3000); // Change stage every 3 seconds
+
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 95) {
+            return prev + Math.random() * 3;
+          }
+          return prev;
+        });
+      }, 200); // Update progress smoothly
+
+      return () => {
+        clearInterval(stageInterval);
+        clearInterval(progressInterval);
+      };
+    } else {
+      setProgress(0);
+      setLoadingStage(0);
+    }
+  }, [isLoading]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -26,36 +79,204 @@ export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) 
     setDragActive(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const files = Array.from(e.dataTransfer.files).map(f => f.name);
+      // Store the full File object
+      const files = Array.from(e.dataTransfer.files);
       setUploadedFiles(prev => [...prev, ...files]);
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const files = Array.from(e.target.files).map(f => f.name);
+      // Store the full File object
+      const files = Array.from(e.target.files);
       setUploadedFiles(prev => [...prev, ...files]);
     }
   };
 
-  const handleAnalyze = () => {
-    if (uploadedFiles.length > 0) {
-      onNavigate('output');
-    } else {
+  // --- 🛑 STEP 2: THE AI CONNECTION LOGIC ---
+  const handleAnalyze = async () => {
+    if (uploadedFiles.length === 0) {
       alert('Please upload at least one file first');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // If no API URL is set, use mock data for testing
+      if (!API_URL || (typeof API_URL === 'string' && API_URL.trim() === "")) {
+        console.log("⚠️ No API URL configured - Using mock data");
+        
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Mock data
+        const mockData = {
+          metadata: {
+            sampleName: uploadedFiles[0].name,
+            totalSequences: 150,
+            processingTime: "2.8s",
+            avgConfidence: 89
+          },
+          taxonomy_summary: [
+            { name: 'Alveolata', value: 45, color: '#22D3EE' },
+            { name: 'Chlorophyta', value: 32, color: '#10B981' },
+            { name: 'Fungi', value: 15, color: '#A78BFA' },
+            { name: 'Metazoa', value: 28, color: '#F59E0B' },
+            { name: 'Rhodophyta', value: 18, color: '#EC4899' },
+            { name: 'Unknown', value: 12, color: '#64748B' }
+          ],
+          sequences: [
+            { accession: 'SEQ_001', taxonomy: 'Alveolata; Dinoflagellata; Gymnodiniales', length: 1842, confidence: 0.94, overlap: 87, cluster: 'C1' },
+            { accession: 'SEQ_002', taxonomy: 'Chlorophyta; Chlorophyceae; Chlamydomonadales', length: 1654, confidence: 0.89, overlap: 92, cluster: 'C2' },
+            { accession: 'SEQ_003', taxonomy: 'Metazoa; Arthropoda; Copepoda', length: 2103, confidence: 0.96, overlap: 94, cluster: 'C3' },
+            { accession: 'SEQ_004', taxonomy: 'Unknown; Novel Cluster A', length: 1723, confidence: 0.42, overlap: 34, cluster: 'N1' },
+            { accession: 'SEQ_005', taxonomy: 'Rhodophyta; Florideophyceae; Ceramiales', length: 1889, confidence: 0.91, overlap: 88, cluster: 'C4' },
+          ],
+          cluster_data: [
+            { x: 12.5, y: 8.3, z: 45, cluster: 'Alveolata', color: '#22D3EE' },
+            { x: -8.2, y: 15.1, z: 32, cluster: 'Chlorophyta', color: '#10B981' },
+            { x: 3.4, y: -12.7, z: 28, cluster: 'Metazoa', color: '#F59E0B' },
+            { x: -15.8, y: -5.2, z: 18, cluster: 'Rhodophyta', color: '#EC4899' },
+            { x: 18.3, y: 2.1, z: 15, cluster: 'Fungi', color: '#A78BFA' },
+            { x: -2.1, y: -18.5, z: 12, cluster: 'Unknown', color: '#64748B' },
+          ]
+        };
+
+        // Complete the progress bar
+        setProgress(100);
+        setLoadingStage(loadingStages.length - 1);
+
+        // Wait a moment to show completion
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Save mock data
+        localStorage.setItem('analysisResults', JSON.stringify(mockData));
+        console.log("💾 Saved mock data to localStorage");
+
+        // Navigate to results
+        onNavigate('output');
+        return;
+      }
+
+      const formData = new FormData();
+      // We send the first file in the list to the backend
+      formData.append('file', uploadedFiles[0]);
+
+      console.log("🚀 Sending to Backend...");
+      console.log("📁 File:", uploadedFiles[0].name);
+      console.log("🔗 API URL:", API_URL);
+
+      const response = await fetch(`${API_URL}/analyze`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+
+      console.log("📡 Response Status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Server Error Response:", errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("📦 Received Result:", result);
+
+      if (result.status === "success") {
+        console.log("✅ Analysis Complete!");
+        console.log("📊 Data Structure:", {
+          hasMetadata: !!result.data?.metadata,
+          hasTaxonomySummary: !!result.data?.taxonomy_summary,
+          hasSequences: !!result.data?.sequences,
+          hasClusterData: !!result.data?.cluster_data,
+          sequenceCount: result.data?.sequences?.length || 0
+        });
+
+        // Complete the progress bar
+        setProgress(100);
+        setLoadingStage(loadingStages.length - 1);
+
+        // Wait a moment to show completion
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // SAVE DATA TO LOCAL STORAGE (So the Output Page can read it)
+        localStorage.setItem('analysisResults', JSON.stringify(result.data));
+        console.log("💾 Saved to localStorage");
+
+        // Navigate to results
+        onNavigate('output');
+      } else {
+        console.error("❌ Server returned error:", result.message);
+        alert("Server Error: " + (result.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("❌ Connection Failed:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      alert(`Failed to connect to AI Server.\n\nError: ${errorMessage}\n\nTroubleshooting:\n1. Check if backend is running\n2. Verify API URL is correct: ${API_URL || '(empty)'}\n3. Check browser console (F12) for details\n4. Ensure CORS is enabled on backend\n\nTip: Leave API_URL empty to use mock data for testing`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
+      {/* Massive Text Hero Section */}
+      <div className="relative overflow-hidden py-20 md:py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-6">
+            {/* Main Headline - Massive Typography */}
+            <h1 className={`text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold leading-none tracking-tight ${
+              isDarkMode ? 'text-white' : 'text-slate-900'
+            }`}>
+              <span className="block">Transform</span>
+              <span className={`block ${
+                isDarkMode 
+                  ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400' 
+                  : 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-600 to-purple-600'
+              }`}>
+                eDNA Sequences
+              </span>
+              <span className="block">Into Insights</span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className={`text-lg sm:text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed ${
+              isDarkMode ? 'text-slate-300' : 'text-slate-600'
+            }`}>
+              AI-Powered biodiversity classification using Nucleotide Transformer and comprehensive marine databases
+            </p>
+
+            {/* CTA */}
+            <div className="pt-8">
+              <a 
+                href="#upload"
+                className={`inline-flex items-center gap-2 px-8 py-4 text-lg font-semibold rounded-full transition-all ${
+                  isDarkMode
+                    ? 'bg-cyan-600 hover:bg-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30'
+                }`}
+              >
+                Upload Sequences
+                <ChevronRight className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Upload Section */}
+      <div id="upload" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Section Header */}
         <div className="mb-8">
-          <h1 className={`text-3xl md:text-4xl mb-3 font-bold ${
+          <h2 className={`text-2xl md:text-3xl mb-3 font-bold ${
             isDarkMode ? 'text-white' : 'text-slate-900'
           }`}>
-            Upload Sequences
-          </h1>
+            Upload Your Data
+          </h2>
           <p className={`text-base ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
             Upload your eDNA sequence files for AI-powered taxonomic classification
           </p>
@@ -157,21 +378,136 @@ export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) 
                   }`}
                 >
                   <FileText className="w-5 h-5" />
-                  <span className={isDarkMode ? 'text-slate-300' : 'text-slate-700'}>{file}</span>
+                  <span className={isDarkMode ? 'text-slate-300' : 'text-slate-700'}>{file.name}</span>
                 </div>
               ))}
             </div>
-            <button
-              onClick={handleAnalyze}
-              className={`mt-6 w-full px-8 py-4 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                isDarkMode
-                  ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              Analyze Sequences
-              <ChevronRight className="w-5 h-5" />
-            </button>
+
+            {/* ANALYZE BUTTON WITH ENHANCED LOADING STATE */}
+            {!isLoading ? (
+              <button
+                onClick={handleAnalyze}
+                className={`mt-6 w-full px-8 py-4 rounded-lg transition-all flex items-center justify-center gap-2 font-semibold ${
+                  isDarkMode
+                    ? 'bg-cyan-600 hover:bg-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30'
+                }`}
+              >
+                Analyze Sequences
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            ) : (
+              <div className={`mt-6 w-full rounded-xl p-8 ${
+                isDarkMode 
+                  ? 'bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700' 
+                  : 'bg-gradient-to-br from-white to-slate-50 border border-slate-200'
+              }`}>
+                {/* GPU Processing Animation */}
+                <div className="space-y-6">
+                  {/* Current Stage Display */}
+                  <div className="flex items-center justify-center gap-4">
+                    {(() => {
+                      const CurrentIcon = loadingStages[loadingStage].icon;
+                      const stageColor = loadingStages[loadingStage].color;
+                      return (
+                        <>
+                          <div className={`relative ${isDarkMode ? 'text-cyan-400' : 'text-blue-600'}`}>
+                            <CurrentIcon className="w-8 h-8 animate-pulse" />
+                            <div className={`absolute inset-0 animate-ping opacity-20`}>
+                              <CurrentIcon className="w-8 h-8" />
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                              {loadingStages[loadingStage].text}
+                            </p>
+                            <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                              Stage {loadingStage + 1} of {loadingStages.length}
+                            </p>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className={`h-3 rounded-full overflow-hidden ${
+                      isDarkMode ? 'bg-slate-700' : 'bg-slate-200'
+                    }`}>
+                      <div
+                        className={`h-full transition-all duration-500 ease-out ${
+                          isDarkMode
+                            ? 'bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500'
+                            : 'bg-gradient-to-r from-blue-500 via-cyan-500 to-purple-500'
+                        }`}
+                        style={{ width: `${progress}%` }}
+                      >
+                        <div className="h-full w-full animate-pulse opacity-50 bg-white"></div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
+                        Processing...
+                      </span>
+                      <span className={`font-mono ${isDarkMode ? 'text-cyan-400' : 'text-blue-600'}`}>
+                        {Math.round(progress)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Stage Indicators */}
+                  <div className="flex justify-between items-center gap-2">
+                    {loadingStages.map((stage, idx) => {
+                      const StageIcon = stage.icon;
+                      const isComplete = idx < loadingStage;
+                      const isCurrent = idx === loadingStage;
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex flex-col items-center gap-1 transition-all ${
+                            isComplete || isCurrent ? 'opacity-100' : 'opacity-30'
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                            isComplete
+                              ? isDarkMode
+                                ? 'bg-green-500/20 text-green-400'
+                                : 'bg-green-500/20 text-green-600'
+                              : isCurrent
+                              ? isDarkMode
+                                ? 'bg-cyan-500/20 text-cyan-400 animate-pulse'
+                                : 'bg-blue-500/20 text-blue-600 animate-pulse'
+                              : isDarkMode
+                              ? 'bg-slate-700 text-slate-500'
+                              : 'bg-slate-200 text-slate-400'
+                          }`}>
+                            {isComplete ? (
+                              <CheckCircle2 className="w-5 h-5" />
+                            ) : (
+                              <StageIcon className={`w-5 h-5 ${isCurrent ? 'animate-bounce' : ''}`} />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* GPU Activity Indicator */}
+                  <div className={`flex items-center justify-center gap-2 text-sm ${
+                    isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                  }`}>
+                    <Zap className="w-4 h-4 animate-pulse text-yellow-500" />
+                    <span className="font-mono">GPU Active</span>
+                    <div className="flex gap-1">
+                      <span className="w-1 h-4 bg-green-500 animate-pulse rounded"></span>
+                      <span className="w-1 h-4 bg-green-500 animate-pulse rounded" style={{ animationDelay: '0.2s' }}></span>
+                      <span className="w-1 h-4 bg-green-500 animate-pulse rounded" style={{ animationDelay: '0.4s' }}></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -186,9 +522,7 @@ export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) 
             Load a sample dataset to explore Taxaformer's capabilities
           </p>
           <button
-            onClick={() => {
-              setUploadedFiles(['sample_data.fasta']);
-            }}
+            onClick={() => alert("Logic for sample data loading goes here (Optional for Hackathon)")}
             className={`px-6 py-3 rounded-lg border-2 transition-all ${
               isDarkMode
                 ? 'border-slate-600 hover:border-cyan-400 bg-transparent hover:bg-cyan-500/10 text-slate-300 hover:text-white'
