@@ -93,6 +93,65 @@ export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) 
     }
   };
 
+  // --- 📥 DOWNLOAD ANALYSIS RESULTS TO LOCAL FILES ---
+  const downloadAnalysisResults = (data: any, originalFilename: string) => {
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const baseName = originalFilename.replace(/\.[^/.]+$/, '');
+
+      // 1. Download full JSON response
+      const jsonBlob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const jsonUrl = URL.createObjectURL(jsonBlob);
+      const jsonLink = document.createElement('a');
+      jsonLink.href = jsonUrl;
+      jsonLink.download = `${baseName}_analysis_${timestamp}.json`;
+      document.body.appendChild(jsonLink);
+      jsonLink.click();
+      document.body.removeChild(jsonLink);
+      URL.revokeObjectURL(jsonUrl);
+
+      // 2. Download sequences as CSV
+      if (data.sequences && data.sequences.length > 0) {
+        const csvHeader = 'Accession,Taxonomy,Length,Confidence,Overlap,Cluster,Novelty_Score,Status\n';
+        const csvRows = data.sequences.map((seq: any) => 
+          `"${seq.accession}","${seq.taxonomy}",${seq.length},${seq.confidence},${seq.overlap},"${seq.cluster}",${seq.novelty_score || 0},"${seq.status || 'Known'}"`
+        ).join('\n');
+        
+        const csvBlob = new Blob([csvHeader + csvRows], { type: 'text/csv' });
+        const csvUrl = URL.createObjectURL(csvBlob);
+        const csvLink = document.createElement('a');
+        csvLink.href = csvUrl;
+        csvLink.download = `${baseName}_sequences_${timestamp}.csv`;
+        document.body.appendChild(csvLink);
+        csvLink.click();
+        document.body.removeChild(csvLink);
+        URL.revokeObjectURL(csvUrl);
+      }
+
+      // 3. Download taxonomy summary as CSV
+      if (data.taxonomy_summary && data.taxonomy_summary.length > 0) {
+        const taxCsvHeader = 'Taxonomy_Group,Count,Color\n';
+        const taxCsvRows = data.taxonomy_summary.map((group: any) => 
+          `"${group.name}",${group.value},"${group.color}"`
+        ).join('\n');
+        
+        const taxCsvBlob = new Blob([taxCsvHeader + taxCsvRows], { type: 'text/csv' });
+        const taxCsvUrl = URL.createObjectURL(taxCsvBlob);
+        const taxCsvLink = document.createElement('a');
+        taxCsvLink.href = taxCsvUrl;
+        taxCsvLink.download = `${baseName}_taxonomy_summary_${timestamp}.csv`;
+        document.body.appendChild(taxCsvLink);
+        taxCsvLink.click();
+        document.body.removeChild(taxCsvLink);
+        URL.revokeObjectURL(taxCsvUrl);
+      }
+
+      console.log("📥 Downloaded analysis results to local files");
+    } catch (error) {
+      console.error("❌ Error downloading files:", error);
+    }
+  };
+
   // --- 🛑 STEP 2: THE AI CONNECTION LOGIC ---
   const handleAnalyze = async () => {
     if (uploadedFiles.length === 0) {
@@ -166,23 +225,16 @@ export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) 
       console.log("🚀 Sending to Backend...");
       console.log("📁 File:", uploadedFiles[0].name);
       console.log("🔗 API URL:", API_URL);
+      console.log("⏳ No timeout - will wait as long as needed for GPU processing...");
 
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
-      );
-
-      // Create the fetch promise
-      const fetchPromise = fetch(`${API_URL}/analyze`, {
+      // NO TIMEOUT - Let it process as long as needed
+      const response = await fetch(`${API_URL}/analyze`, {
         method: 'POST',
         body: formData,
         headers: {
           'ngrok-skip-browser-warning': 'true',
         },
       });
-
-      // Race between fetch and timeout
-      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
 
       console.log("📡 Response Status:", response.status);
 
@@ -209,14 +261,14 @@ export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) 
         setProgress(100);
         setLoadingStage(loadingStages.length - 1);
 
-        // Wait a moment to show completion
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
         // SAVE DATA TO LOCAL STORAGE (So the Output Page can read it)
         localStorage.setItem('analysisResults', JSON.stringify(result.data));
         console.log("💾 Saved to localStorage");
 
-        // Navigate to results
+        // DOWNLOAD RESULTS TO LOCAL FILES
+        downloadAnalysisResults(result.data, uploadedFiles[0].name);
+
+        // Navigate to results immediately
         onNavigate('output');
       } else {
         console.error("❌ Server returned error:", result.message);
@@ -226,57 +278,14 @@ export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) 
       console.error("❌ Connection Failed:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       
-      // Auto-fallback to mock data
-      console.log("⚠️ Falling back to mock data...");
+      setIsLoading(false);
+      setProgress(0);
+      setLoadingStage(0);
       
-      const mockData = {
-        metadata: {
-          sampleName: uploadedFiles[0].name,
-          totalSequences: 150,
-          processingTime: "Mock",
-          avgConfidence: 89
-        },
-        taxonomy_summary: [
-          { name: 'Alveolata', value: 45, color: '#22D3EE' },
-          { name: 'Chlorophyta', value: 32, color: '#10B981' },
-          { name: 'Fungi', value: 15, color: '#A78BFA' },
-          { name: 'Metazoa', value: 28, color: '#F59E0B' },
-          { name: 'Rhodophyta', value: 18, color: '#EC4899' },
-          { name: 'Unknown', value: 12, color: '#64748B' }
-        ],
-        sequences: [
-          { accession: 'SEQ_001', taxonomy: 'Alveolata; Dinoflagellata; Gymnodiniales', length: 1842, confidence: 0.94, overlap: 87, cluster: 'C1' },
-          { accession: 'SEQ_002', taxonomy: 'Chlorophyta; Chlorophyceae; Chlamydomonadales', length: 1654, confidence: 0.89, overlap: 92, cluster: 'C2' },
-          { accession: 'SEQ_003', taxonomy: 'Metazoa; Arthropoda; Copepoda', length: 2103, confidence: 0.96, overlap: 94, cluster: 'C3' },
-          { accession: 'SEQ_004', taxonomy: 'Unknown; Novel Cluster A', length: 1723, confidence: 0.42, overlap: 34, cluster: 'N1' },
-          { accession: 'SEQ_005', taxonomy: 'Rhodophyta; Florideophyceae; Ceramiales', length: 1889, confidence: 0.91, overlap: 88, cluster: 'C4' },
-        ],
-        cluster_data: [
-          { x: 12.5, y: 8.3, z: 45, cluster: 'Alveolata', color: '#22D3EE' },
-          { x: -8.2, y: 15.1, z: 32, cluster: 'Chlorophyta', color: '#10B981' },
-          { x: 3.4, y: -12.7, z: 28, cluster: 'Metazoa', color: '#F59E0B' },
-          { x: -15.8, y: -5.2, z: 18, cluster: 'Rhodophyta', color: '#EC4899' },
-          { x: 18.3, y: 2.1, z: 15, cluster: 'Fungi', color: '#A78BFA' },
-          { x: -2.1, y: -18.5, z: 12, cluster: 'Unknown', color: '#64748B' },
-        ]
-      };
-
-      // Complete the progress bar
-      setProgress(100);
-      setLoadingStage(loadingStages.length - 1);
-
-      // Wait a moment to show completion
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Save mock data
-      localStorage.setItem('analysisResults', JSON.stringify(mockData));
-      console.log("💾 Saved mock data to localStorage (API failed)");
-
-      // Show a notification that mock data is being used
-      alert(`⚠️ API Connection Failed\n\nError: ${errorMessage}\n\n✅ Using mock data for demonstration.\n\nTo connect to your backend:\n1. Ensure backend is running\n2. Update API_URL in UploadPage.tsx\n3. Check CORS settings\n\nClick OK to view mock results.`);
-
-      // Navigate to results with mock data
-      onNavigate('output');
+      // Show detailed error message
+      alert(`❌ Backend Connection Failed\n\nError: ${errorMessage}\n\n🔍 Troubleshooting:\n\n1. Check if Kaggle backend is running\n2. Verify ngrok URL is correct:\n   Current: ${API_URL}\n\n3. Check Kaggle notebook output for errors\n4. Ensure Internet is enabled in Kaggle settings\n5. Try refreshing the Kaggle notebook\n\n📝 Check browser console (F12) for more details.`);
+      
+      return;
     } finally {
       setIsLoading(false);
     }
