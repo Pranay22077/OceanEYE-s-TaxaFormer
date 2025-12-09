@@ -313,28 +313,7 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
                 </div>
               </div>
               <div>
-                <div className={`text-xs mb-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                  Avg Confidence
-                </div>
-                <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  {stats.avgConfidence}%
-                </div>
-              </div>
-              <div>
-                <div className={`text-xs mb-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                  Avg Length
-                </div>
-                <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  {stats.avgLength} bp
-                </div>
-              </div>
-              <div>
-                <div className={`text-xs mb-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                  Processing Time
-                </div>
-                <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  {analysisMetadata.processingTime}
-                </div>
+                
               </div>
             </div>
           </div>
@@ -355,7 +334,7 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
         {/* Secondary Grid */}
         <div className="grid lg:grid-cols-2 gap-8 mb-8">
           
-          {/* Novel Species Detection Panel */}
+          {/* Novel Species Detected Panel - UPDATED */}
           <GlareHover
             glareColor={isDarkMode ? "#A78BFA" : "#8B5CF6"}
             glareOpacity={0.35}
@@ -363,31 +342,32 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
             glareSize={300}
             transitionDuration={750}
             playOnce={false}
-            borderColor={isDarkMode ? '#6D28D9' : '#C4B5FD'}
+            borderColor={isDarkMode ? '#334155' : '#475569'} // Changed border to neutral slate
             borderRadius="1rem"
           >
             <div className={`p-6 rounded-2xl backdrop-blur-md h-full ${
-              isDarkMode ? 'bg-gradient-to-br from-purple-900/30 to-slate-800/50' : 'bg-gradient-to-br from-purple-100/50 to-white/50'
-            } border-2 ${isDarkMode ? 'border-purple-500/30' : 'border-purple-300/50'}`}>
+              isDarkMode ? 'bg-black border-slate-800' : 'bg-slate-950 border-slate-800' // Changed to Black/Dark Slate
+            } border-2`}>
               <div className="flex items-center gap-3 mb-6">
-                <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
-                  <Sparkles className={`w-5 h-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+                <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-slate-800' : 'bg-slate-800'}`}>
+                  <Sparkles className={`w-5 h-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-400'}`} />
                 </div>
-                <h2 className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                <h2 className={`font-bold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                   Novel Species Detected
                 </h2>
               </div>
 
               <div className="text-center py-8">
-                <div className={`text-6xl mb-4 font-bold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                  23
+                {/* DYNAMIC COUNT APPLIED HERE */}
+                <div className={`text-6xl mb-4 font-bold ${isDarkMode ? 'text-purple-400' : 'text-purple-400'}`}>
+                  {stats.novelCount}
                 </div>
-                <p className={`text-sm mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                <p className={`text-sm mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>
                   Unassigned sequences found
                 </p>
                 
-                <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-slate-800/60' : 'bg-purple-50/80'}`}>
-                  <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-900'} border border-slate-800`}>
+                  <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>
                     These sequences do not match PR2/SILVA references. Detected using transformer embeddings + clustering analysis.
                   </p>
                 </div>
@@ -401,21 +381,21 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
                 </button>
               </div>
 
-              <div className={`mt-6 p-4 rounded-lg ${isDarkMode ? 'bg-slate-800/40' : 'bg-white/60'}`}>
+              <div className={`mt-6 p-4 rounded-lg ${isDarkMode ? 'bg-slate-900' : 'bg-slate-900'} border border-slate-800`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className={`w-4 h-4 ${isDarkMode ? 'text-cyan-400' : 'text-cyan-600'}`} />
-                  <span className={`text-xs font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  <AlertCircle className={`w-4 h-4 ${isDarkMode ? 'text-cyan-400' : 'text-cyan-400'}`} />
+                  <span className={`text-xs font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>
                     Novelty Metrics
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <p className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>Novel Sequences</p>
-                    <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{stats.novelCount}</p>
+                    <p className={isDarkMode ? 'text-slate-400' : 'text-slate-400'}>Novel Sequences</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>{stats.novelCount}</p>
                   </div>
                   <div>
-                    <p className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>Novel Rate</p>
-                    <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{stats.total > 0 ? ((stats.novelCount / stats.total) * 100).toFixed(1) : 0}%</p>
+                    <p className={isDarkMode ? 'text-slate-400' : 'text-slate-400'}>Novel Rate</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-white'}`}>{stats.total > 0 ? ((stats.novelCount / stats.total) * 100).toFixed(1) : 0}%</p>
                   </div>
                 </div>
               </div>
@@ -628,53 +608,7 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
               </div>
             </div>
 
-            {/* Sequence Length Distribution */}
-            <div className="mb-6">
-              <h3 className={`text-base mb-4 font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                Sequence Length Distribution
-              </h3>
-              <div className="h-48 flex items-end justify-between gap-1.5">
-                {(() => {
-                  const lengths = taxonomyTableData.map(s => s.length);
-                  if (lengths.length === 0) return null;
-                  
-                  const minLen = Math.min(...lengths);
-                  const maxLen = Math.max(...lengths);
-                  const binSize = Math.max(1, (maxLen - minLen) / 10);
-                  const bins = Array(10).fill(0);
-                  
-                  lengths.forEach(len => {
-                    const binIndex = Math.min(Math.floor((len - minLen) / binSize), 9);
-                    bins[binIndex]++;
-                  });
-                  
-                  const maxBinValue = Math.max(...bins);
-                  
-                  return bins.map((count, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-2">
-                      <div className={`text-xs font-semibold ${isDarkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                        {count}
-                      </div>
-                      <div
-                        className={`w-full rounded-t-lg transition-all duration-500 ${
-                          isDarkMode ? 'bg-gradient-to-t from-cyan-500 to-cyan-400' : 'bg-gradient-to-t from-blue-500 to-blue-400'
-                        }`}
-                        style={{ 
-                          height: `${maxBinValue > 0 ? (count / maxBinValue * 100) : 0}%`,
-                          minHeight: count > 0 ? '8%' : '0%'
-                        }}
-                      />
-                      <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                        {Math.round(minLen + idx * binSize)}
-                      </span>
-                    </div>
-                  ));
-                })()}
-              </div>
-              <div className={`mt-3 text-center text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                Sequence Length (bp)
-              </div>
-            </div>
+            
 
             {/* Novel vs Known Comparison */}
             <div>
@@ -740,20 +674,6 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
                   onClick={() => setSelectedTab('embedding')}
                   className={`px-4 py-2 rounded text-sm font-semibold transition-all ${
                     selectedTab === 'embedding'
-                      ? isDarkMode 
-                        ? 'bg-cyan-600 text-white' 
-                        : 'bg-cyan-600 text-white'
-                      : isDarkMode 
-                        ? 'text-slate-400 hover:text-white' 
-                        : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Embedding Plot
-                </button>
-                <button 
-                  onClick={() => setSelectedTab('clusters')}
-                  className={`px-4 py-2 rounded text-sm font-semibold transition-all ${
-                    selectedTab === 'clusters'
                       ? isDarkMode 
                         ? 'bg-cyan-600 text-white' 
                         : 'bg-cyan-600 text-white'
@@ -1175,52 +1095,7 @@ export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) 
           </div>
         </GlareHover>
 
-        {/* Recommendations Panel */}
-        <GlareHover
-          glareColor={isDarkMode ? "#F59E0B" : "#D97706"}
-          glareOpacity={0.3}
-          glareAngle={-40}
-          glareSize={300}
-          transitionDuration={750}
-          playOnce={false}
-          borderColor={isDarkMode ? '#92400E' : '#FCD34D'}
-          borderRadius="1rem"
-        >
-          <div className={`p-6 rounded-2xl backdrop-blur-md mb-8 ${
-            isDarkMode ? 'bg-slate-800/50' : 'bg-white/50'
-          }`}>
-            <h2 className={`mb-6 font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              Insights & Recommendations
-            </h2>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-              <InsightCard
-                isDarkMode={isDarkMode}
-                icon={<Globe className="w-6 h-6" />}
-                iconColor={isDarkMode ? 'text-cyan-400' : 'text-cyan-600'}
-                iconBg={isDarkMode ? 'bg-cyan-500/20' : 'bg-cyan-100'}
-                title="High Diversity Zone"
-                description="Shannon index of 3.42 suggests rich biodiversity. Consider increased sampling in this region."
-              />
-              <InsightCard
-                isDarkMode={isDarkMode}
-                icon={<Sparkles className="w-6 h-6" />}
-                iconColor={isDarkMode ? 'text-purple-400' : 'text-purple-600'}
-                iconBg={isDarkMode ? 'bg-purple-500/20' : 'bg-purple-100'}
-                title="Novel Taxa Detected"
-                description="23 sequences show low similarity to references. Potential new species or deep-sea variants."
-              />
-              <InsightCard
-                isDarkMode={isDarkMode}
-                icon={<TrendingUp className="w-6 h-6" />}
-                iconColor={isDarkMode ? 'text-green-400' : 'text-green-600'}
-                iconBg={isDarkMode ? 'bg-green-500/20' : 'bg-green-100'}
-                title="Dominant Groups"
-                description="Alveolata and Chlorophyta dominate. Typical of productive deep-sea upwelling zones."
-              />
-            </div>
-          </div>
-        </GlareHover>
+        
 
         {/* Footer Credits */}
         <div className={`p-6 rounded-2xl backdrop-blur-md text-center ${

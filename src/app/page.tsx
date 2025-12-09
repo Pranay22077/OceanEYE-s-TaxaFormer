@@ -653,19 +653,19 @@ function HomePage({ isDarkMode, onNavigate, handleScrollTo, handleUpload, handle
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className={`mt-1 p-2 rounded-lg ${isDarkMode ? 'bg-cyan-500/20' : 'bg-cyan-600/20'}`}><Dna className={`w-5 h-5 ${isDarkMode ? 'text-cyan-400' : 'text-cyan-600'}`} /></div>
-                  <div><h4 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>DNA Sequencing Precision</h4><p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Process over 1.2M+ sequences with 99.8% accuracy</p></div>
+                  <div><h4 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Genomic Transformer Core</h4><p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Powered by a fine-tuned Nucleotide Transformer for context-aware DNA syntax analysis</p></div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className={`mt-1 p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-600/20'}`}><Waves className={`w-5 h-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} /></div>
-                  <div><h4 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Global Ocean Coverage</h4><p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Map biodiversity across 2.3M km² of marine ecosystems</p></div>
+                  <div><h4 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>High-Speed Inference</h4><p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Uses smart compression and efficient sorting to analyze huge DNA datasets in just seconds</p></div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className={`mt-1 p-2 rounded-lg ${isDarkMode ? 'bg-purple-500/20' : 'bg-purple-600/20'}`}><Fish className={`w-5 h-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} /></div>
-                  <div><h4 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Species Intelligence</h4><p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Identify 1,284 species across 23 phyla</p></div>
+                  <div><h4 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Novelty Detection</h4><p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Automated embedding distance metrics flag unknown variants and potentially undiscovered species</p></div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className={`mt-1 p-2 rounded-lg ${isDarkMode ? 'bg-pink-500/20' : 'bg-pink-600/20'}`}><Microscope className={`w-5 h-5 ${isDarkMode ? 'text-pink-400' : 'text-pink-600'}`} /></div>
-                  <div><h4 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Comprehensive Analysis</h4><p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Analyze 661 samples from 47 locations</p></div>
+                  <div><h4 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Interactive Global Map</h4><p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Visualize and compare your findings against known areas of high ecological importance</p></div>
                 </div>
               </div>
             </div>
