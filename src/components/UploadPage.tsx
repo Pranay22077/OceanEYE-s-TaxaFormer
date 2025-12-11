@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Upload, FileText, Database, ChevronRight, Loader2, Cpu, Zap, Brain, CheckCircle2, MapPin, Calendar, Thermometer, Droplets, Info } from 'lucide-react';
-import { fetchSampleDataFromSupabase } from '@/utils/supabaseClient';
-import { fetchSampleFilesFromSupabase } from '@/utils/supabaseClient';
-// import { fetchSampleFilesFromSupabase, fetchSampleDataFromSupabase } from '../utils/supabaseClient';
+import { fetchSampleFilesFromSupabase, fetchSampleDataFromSupabase } from '../utils/supabaseClient';
 
 // 🛑 STEP 1: PASTE YOUR NGROK URL HERE
 // Leave empty to use mock data for testing
@@ -12,6 +10,7 @@ const API_URL: string = "https://unexcited-nondepreciatively-justice.ngrok-free.
 interface UploadPageProps {
   isDarkMode: boolean;
   onNavigate: (page: string) => void;
+  onGoBack?: () => void;
 }
 
 interface SampleMetadata {
@@ -45,7 +44,7 @@ interface SampleFile {
   novel_species_count: number;
 }
 
-export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) {
+export default function UploadPage({ isDarkMode, onNavigate, onGoBack }: UploadPageProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -401,6 +400,23 @@ export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) 
 
   return (
     <div className="min-h-screen">
+      {/* Previous Button */}
+      {onGoBack && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <button
+            onClick={onGoBack}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              isDarkMode
+                ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
+            }`}
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" />
+            Previous
+          </button>
+        </div>
+      )}
+
       {/* Hero Section */}
       <div className="relative overflow-hidden py-20 md:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -712,27 +728,11 @@ export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) 
                       </div>
                     </div>
                     <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-100/50'}`}>
-                      <div className={`font-medium ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                        {Math.round(sample.avg_confidence * 100)}%
-                      </div>
-                      <div className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
-                        Confidence
-                      </div>
-                    </div>
-                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-100/50'}`}>
                       <div className={`font-medium ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
                         {sample.file_size_mb.toFixed(1)} MB
                       </div>
                       <div className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
                         File Size
-                      </div>
-                    </div>
-                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-100/50'}`}>
-                      <div className={`font-medium ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>
-                        {sample.novel_species_count}
-                      </div>
-                      <div className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
-                        Novel Species
                       </div>
                     </div>
                   </div>
