@@ -109,10 +109,15 @@ Contributions, issues, and feature requests are welcome!
 
 ## 👥 Authors
 
-Your Name - [GitHub](https://github.com/YOUR_USERNAME)
+Pranay Gadh - [GitHub](https://github.com/Pranay22077)
+Raja Rathour - [GitHub](https://github.com/Raja-89)
+Shaurya Sinha - [GitHub](https://github.com/Shaurya-Sinha3301)
+Rishabh Ranjan Singh - [GitHub](https://github.com/Rishabh1925)
+Satyam Tiwari- [GitHub](https://github.com/Satyam-Tiwari-10)
+
 
 ## 🙏 Acknowledgments
 
 - Nucleotide Transformer AI team
 - PR2 and SILVA database maintainers
-- shadcn/ui for the beautiful component library
+- shadcn/ui and React Bits for the beautiful component library
