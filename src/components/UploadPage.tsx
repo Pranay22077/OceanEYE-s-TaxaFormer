@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, FileText, Database, ChevronRight, Loader2, Cpu, Zap, Brain, CheckCircle2, MapPin, Calendar, Thermometer, Droplets, Info } from 'lucide-react';
+import { Upload, FileText, Database, ChevronRight, Loader2, Cpu, Zap, Brain, CheckCircle2, MapPin, Calendar, Thermometer, Info } from 'lucide-react';
 import { fetchSampleFilesFromSupabase, fetchSampleDataFromSupabase } from '../utils/supabaseClient';
 
 // 🛑 STEP 1: PASTE YOUR NGROK URL HERE
@@ -10,7 +10,6 @@ const API_URL: string = "https://unexcited-nondepreciatively-justice.ngrok-free.
 interface UploadPageProps {
   isDarkMode: boolean;
   onNavigate: (page: string) => void;
-  onGoBack?: () => void;
 }
 
 interface SampleMetadata {
@@ -44,7 +43,7 @@ interface SampleFile {
   novel_species_count: number;
 }
 
-export default function UploadPage({ isDarkMode, onNavigate, onGoBack }: UploadPageProps) {
+export default function UploadPage({ isDarkMode, onNavigate }: UploadPageProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -170,12 +169,14 @@ export default function UploadPage({ isDarkMode, onNavigate, onGoBack }: UploadP
     
     try {
       // Try to fetch real data from Supabase first
+      console.log("🔍 Attempting to fetch real sample files from database...");
       const realSamples = await fetchSampleFilesFromSupabase();
       console.log("✅ Loaded real sample files from database:", realSamples.length);
       setSampleFiles(realSamples);
     } catch (error) {
-      console.warn("⚠️ Failed to fetch from database, using mock data:", error);
-      // Fallback to mock data
+      console.warn("⚠️ Failed to fetch from database, using fallback mock data:", error);
+      
+      // Fallback to mock data if database is empty or connection fails
       const mockSamples = [
         {
           job_id: "sample_001",
@@ -203,9 +204,29 @@ export default function UploadPage({ isDarkMode, onNavigate, onGoBack }: UploadP
           file_size_mb: 18.3,
           avg_confidence: 0.85,
           novel_species_count: 5
+        },
+        {
+          job_id: "sample_004",
+          filename: "arctic_plankton_diversity.fasta",
+          total_sequences: 156,
+          created_at: "2024-12-07T11:20:00Z",
+          file_size_mb: 9.2,
+          avg_confidence: 0.87,
+          novel_species_count: 2
+        },
+        {
+          job_id: "sample_005",
+          filename: "tropical_reef_microbiome.fasta",
+          total_sequences: 428,
+          created_at: "2024-12-06T16:45:00Z",
+          file_size_mb: 22.1,
+          avg_confidence: 0.91,
+          novel_species_count: 7
         }
       ];
+      
       setSampleFiles(mockSamples);
+      console.log("✅ Using fallback mock data:", mockSamples.length, "samples");
     } finally {
       setLoadingSamples(false);
     }
@@ -222,17 +243,17 @@ export default function UploadPage({ isDarkMode, onNavigate, onGoBack }: UploadP
       localStorage.setItem('analysisResults', JSON.stringify(realData));
       onNavigate('output');
     } catch (error) {
-      console.warn("⚠️ Failed to fetch real data, using mock data:", error);
+      console.warn("⚠️ Failed to fetch real data, using fallback mock data:", error);
       
-      // Fallback to mock data
-      const mockSampleData = {
-        metadata: {
-          sampleName: `Sample ${jobId}`,
-          totalSequences: 245,
-          processingTime: "3.2s",
-          avgConfidence: 89
-        },
-        taxonomy_summary: [
+      // Generate varied mock data based on jobId as fallback
+      const sampleFile = sampleFiles.find(f => f.job_id === jobId);
+      const filename = sampleFile?.filename || `Sample ${jobId}`;
+      const totalSeqs = sampleFile?.total_sequences || 245;
+      const confidence = Math.round((sampleFile?.avg_confidence || 0.89) * 100);
+      
+      // Create varied taxonomy data based on filename
+      const taxonomyVariations = [
+        [
           { name: 'Alveolata', value: 65, color: '#22D3EE' },
           { name: 'Chlorophyta', value: 42, color: '#10B981' },
           { name: 'Fungi', value: 28, color: '#A78BFA' },
@@ -240,19 +261,53 @@ export default function UploadPage({ isDarkMode, onNavigate, onGoBack }: UploadP
           { name: 'Rhodophyta', value: 25, color: '#EC4899' },
           { name: 'Unknown', value: 47, color: '#64748B' }
         ],
-        sequences: [
-          { accession: 'SEQ_001', taxonomy: 'Alveolata; Dinoflagellata; Gymnodiniales', length: 1842, confidence: 0.94, overlap: 87, cluster: 'C1' },
-          { accession: 'SEQ_002', taxonomy: 'Chlorophyta; Chlorophyceae; Chlamydomonadales', length: 1654, confidence: 0.89, overlap: 92, cluster: 'C2' },
-          { accession: 'SEQ_003', taxonomy: 'Metazoa; Arthropoda; Copepoda', length: 2103, confidence: 0.96, overlap: 94, cluster: 'C3' }
+        [
+          { name: 'Bacteria', value: 78, color: '#3B82F6' },
+          { name: 'Archaea', value: 23, color: '#8B5CF6' },
+          { name: 'Eukaryota', value: 45, color: '#10B981' },
+          { name: 'Viruses', value: 12, color: '#F59E0B' },
+          { name: 'Plasmids', value: 8, color: '#EC4899' },
+          { name: 'Unknown', value: 34, color: '#64748B' }
         ],
-        cluster_data: [
-          { x: 12.5, y: 8.3, z: 65, cluster: 'Alveolata', color: '#22D3EE' },
-          { x: -8.2, y: 15.1, z: 42, cluster: 'Chlorophyta', color: '#10B981' },
-          { x: 3.4, y: -12.7, z: 38, cluster: 'Metazoa', color: '#F59E0B' }
+        [
+          { name: 'Proteobacteria', value: 89, color: '#06B6D4' },
+          { name: 'Firmicutes', value: 56, color: '#84CC16' },
+          { name: 'Actinobacteria', value: 34, color: '#A855F7' },
+          { name: 'Bacteroidetes', value: 67, color: '#EF4444' },
+          { name: 'Cyanobacteria', value: 23, color: '#F97316' },
+          { name: 'Other', value: 31, color: '#6B7280' }
         ]
+      ];
+      
+      const taxonomyIndex = Math.abs(jobId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % taxonomyVariations.length;
+      
+      const mockSampleData = {
+        metadata: {
+          sampleName: filename,
+          totalSequences: totalSeqs,
+          processingTime: `${(2.1 + Math.random() * 2).toFixed(1)}s`,
+          avgConfidence: confidence
+        },
+        taxonomy_summary: taxonomyVariations[taxonomyIndex],
+        sequences: Array.from({ length: Math.min(totalSeqs, 50) }, (_, i) => ({
+          accession: `SEQ_${String(i + 1).padStart(3, '0')}`,
+          taxonomy: taxonomyVariations[taxonomyIndex][i % taxonomyVariations[taxonomyIndex].length].name + '; Species_' + (i + 1),
+          length: 1200 + Math.floor(Math.random() * 1000),
+          confidence: 0.75 + Math.random() * 0.24,
+          overlap: 80 + Math.floor(Math.random() * 20),
+          cluster: `C${(i % 5) + 1}`
+        })),
+        cluster_data: taxonomyVariations[taxonomyIndex].slice(0, 3).map((item, i) => ({
+          x: (Math.random() - 0.5) * 20,
+          y: (Math.random() - 0.5) * 20,
+          z: item.value,
+          cluster: item.name,
+          color: item.color
+        }))
       };
 
       localStorage.setItem('analysisResults', JSON.stringify(mockSampleData));
+      console.log("✅ Using fallback mock data for:", filename);
       onNavigate('output');
     }
   };
@@ -342,6 +397,15 @@ export default function UploadPage({ isDarkMode, onNavigate, onGoBack }: UploadP
       const formData = new FormData();
       formData.append("file", uploadedFiles[0]);
       
+      // Add metadata if provided
+      if (metadata.sampleId || Object.values(metadata.location).some(v => v) || 
+          Object.values(metadata.datetime).some(v => v) || 
+          Object.values(metadata.environmental).some(v => v) || 
+          metadata.notes) {
+        formData.append("metadata", JSON.stringify(metadata));
+        console.log("📋 Including metadata:", metadata);
+      }
+      
       console.log("🚀 Sending to Backend...");
       console.log("📁 File:", uploadedFiles[0].name);
       console.log("🔗 API URL:", API_URL);
@@ -400,23 +464,6 @@ export default function UploadPage({ isDarkMode, onNavigate, onGoBack }: UploadP
 
   return (
     <div className="min-h-screen">
-      {/* Previous Button */}
-      {onGoBack && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <button
-            onClick={onGoBack}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              isDarkMode
-                ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
-                : 'bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
-            }`}
-          >
-            <ChevronRight className="w-4 h-4 rotate-180" />
-            Previous
-          </button>
-        </div>
-      )}
-
       {/* Hero Section */}
       <div className="relative overflow-hidden py-20 md:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -563,6 +610,290 @@ export default function UploadPage({ isDarkMode, onNavigate, onGoBack }: UploadP
                   <span className={isDarkMode ? 'text-slate-300' : 'text-slate-700'}>{file.name}</span>
                 </div>
               ))}
+            </div>
+
+            {/* METADATA SECTION */}
+            <div className="mt-6">
+              <button
+                onClick={() => setShowMetadata(!showMetadata)}
+                className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-all ${
+                  isDarkMode 
+                    ? 'bg-slate-700/50 hover:bg-slate-700 text-white' 
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Info className="w-5 h-5" />
+                  <span className="font-semibold">Add Sample Metadata (Optional)</span>
+                </div>
+                <ChevronRight className={`w-5 h-5 transition-transform ${showMetadata ? 'rotate-90' : ''}`} />
+              </button>
+
+              {showMetadata && (
+                <div className={`mt-4 p-6 rounded-lg ${
+                  isDarkMode ? 'bg-slate-700/30' : 'bg-slate-50'
+                }`}>
+                  <p className={`text-sm mb-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    Add contextual information about your sample for better analysis and record-keeping.
+                  </p>
+
+                  <div className="space-y-6">
+                    {/* Sample ID */}
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${
+                        isDarkMode ? 'text-slate-300' : 'text-slate-700'
+                      }`}>
+                        Sample ID
+                      </label>
+                      <input
+                        type="text"
+                        value={metadata.sampleId}
+                        onChange={(e) => setMetadata({...metadata, sampleId: e.target.value})}
+                        placeholder="e.g., SAMPLE-001"
+                        className={`w-full px-4 py-2 rounded-lg border ${
+                          isDarkMode 
+                            ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                            : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                        } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                      />
+                    </div>
+
+                    {/* Location Section */}
+                    <div>
+                      <h4 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${
+                        isDarkMode ? 'text-cyan-400' : 'text-blue-600'
+                      }`}>
+                        <MapPin className="w-4 h-4" />
+                        Location Information
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            Latitude
+                          </label>
+                          <input
+                            type="text"
+                            value={metadata.location.latitude}
+                            onChange={(e) => handleMetadataChange('location', 'latitude', e.target.value)}
+                            placeholder="e.g., 37.7749"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            Longitude
+                          </label>
+                          <input
+                            type="text"
+                            value={metadata.location.longitude}
+                            onChange={(e) => handleMetadataChange('location', 'longitude', e.target.value)}
+                            placeholder="e.g., -122.4194"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            Depth (meters)
+                          </label>
+                          <input
+                            type="text"
+                            value={metadata.location.depth}
+                            onChange={(e) => handleMetadataChange('location', 'depth', e.target.value)}
+                            placeholder="e.g., 50"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            Site Name
+                          </label>
+                          <input
+                            type="text"
+                            value={metadata.location.site}
+                            onChange={(e) => handleMetadataChange('location', 'site', e.target.value)}
+                            placeholder="e.g., Monterey Bay"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Date & Time Section */}
+                    <div>
+                      <h4 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${
+                        isDarkMode ? 'text-cyan-400' : 'text-blue-600'
+                      }`}>
+                        <Calendar className="w-4 h-4" />
+                        Sampling Date & Time
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            Date
+                          </label>
+                          <input
+                            type="date"
+                            value={metadata.datetime.date}
+                            onChange={(e) => handleMetadataChange('datetime', 'date', e.target.value)}
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white' 
+                                : 'bg-white border-slate-300 text-slate-900'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            Time
+                          </label>
+                          <input
+                            type="time"
+                            value={metadata.datetime.time}
+                            onChange={(e) => handleMetadataChange('datetime', 'time', e.target.value)}
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white' 
+                                : 'bg-white border-slate-300 text-slate-900'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Environmental Conditions */}
+                    <div>
+                      <h4 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${
+                        isDarkMode ? 'text-cyan-400' : 'text-blue-600'
+                      }`}>
+                        <Thermometer className="w-4 h-4" />
+                        Environmental Conditions
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            Temperature (°C)
+                          </label>
+                          <input
+                            type="text"
+                            value={metadata.environmental.temperature}
+                            onChange={(e) => handleMetadataChange('environmental', 'temperature', e.target.value)}
+                            placeholder="e.g., 18.5"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            Salinity (PSU)
+                          </label>
+                          <input
+                            type="text"
+                            value={metadata.environmental.salinity}
+                            onChange={(e) => handleMetadataChange('environmental', 'salinity', e.target.value)}
+                            placeholder="e.g., 35.0"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            pH
+                          </label>
+                          <input
+                            type="text"
+                            value={metadata.environmental.pH}
+                            onChange={(e) => handleMetadataChange('environmental', 'pH', e.target.value)}
+                            placeholder="e.g., 8.1"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${
+                            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`}>
+                            Dissolved Oxygen (mg/L)
+                          </label>
+                          <input
+                            type="text"
+                            value={metadata.environmental.dissolvedOxygen}
+                            onChange={(e) => handleMetadataChange('environmental', 'dissolvedOxygen', e.target.value)}
+                            placeholder="e.g., 7.2"
+                            className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                              isDarkMode 
+                                ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                                : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                            } focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Notes */}
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${
+                        isDarkMode ? 'text-slate-300' : 'text-slate-700'
+                      }`}>
+                        Additional Notes
+                      </label>
+                      <textarea
+                        value={metadata.notes}
+                        onChange={(e) => setMetadata({...metadata, notes: e.target.value})}
+                        placeholder="Add any additional observations or notes about the sample..."
+                        rows={3}
+                        className={`w-full px-4 py-2 rounded-lg border ${
+                          isDarkMode 
+                            ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500' 
+                            : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                        } focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none`}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {!isLoading ? (

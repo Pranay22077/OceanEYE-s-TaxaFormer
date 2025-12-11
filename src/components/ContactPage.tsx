@@ -306,16 +306,6 @@ This message was sent via the Taxaformer contact form.`;
           </div>
         </div>
 
-        {/* Deep Sea Image Section */}
-        <div className={`mt-12 rounded-xl overflow-hidden ${
-          isDarkMode ? 'bg-slate-800/50' : 'bg-white/50'
-        } backdrop-blur-md`}>
-          <img
-            src="https://images.unsplash.com/photo-1719042575585-e9d866f43210?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3JhbCUyMHJlZWYlMjB1bmRlcndhdGVyfGVufDF8fHx8MTc2NDkxNjU0OHww&ixlib=rb-4.1.0&q=80&w=1080"
-            alt="Coral reef underwater"
-            className="w-full h-64 object-cover"
-          />
-        </div>
       </div>
     </div>
   );

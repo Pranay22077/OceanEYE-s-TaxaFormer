@@ -511,7 +511,7 @@ type PageType = 'home' | 'upload' | 'map' | 'report' | 'contact' | 'faq' | 'outp
 export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentPage, setCurrentPage] = useState<PageType>('home');
-  const [navigationHistory, setNavigationHistory] = useState<PageType[]>(['home']);
+
 
   const handleScrollTo = useCallback((id: string) => {
     const element = document.getElementById(id.replace('#', ''));
@@ -522,21 +522,11 @@ export default function Home() {
 
   const handleNavigate = useCallback((page: string) => {
     const newPage = page as PageType;
-    setNavigationHistory(prev => [...prev, newPage]);
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const handleGoBack = useCallback(() => {
-    if (navigationHistory.length > 1) {
-      const newHistory = [...navigationHistory];
-      newHistory.pop(); // Remove current page
-      const previousPage = newHistory[newHistory.length - 1];
-      setNavigationHistory(newHistory);
-      setCurrentPage(previousPage);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [navigationHistory]);
+
 
   const navItems = [
     { label: "Home", onClick: () => handleNavigate('home') },
@@ -580,13 +570,13 @@ export default function Home() {
 
         <div className="relative z-10 pt-24">
           {currentPage === 'home' && <HomePage isDarkMode={isDarkMode} onNavigate={handleNavigate} handleScrollTo={handleScrollTo} handleUpload={handleUpload} handleDemo={handleDemo} />}
-          {currentPage === 'upload' && <UploadPage isDarkMode={isDarkMode} onNavigate={handleNavigate} onGoBack={navigationHistory.length > 1 ? handleGoBack : undefined} />}
+          {currentPage === 'upload' && <UploadPage isDarkMode={isDarkMode} onNavigate={handleNavigate} />}
           {currentPage === 'map' && <MapPage isDarkMode={isDarkMode} onNavigate={handleNavigate} />}
           {currentPage === 'report' && <ReportPage isDarkMode={isDarkMode} onNavigate={handleNavigate} />}
           {currentPage === 'results' && <ResultsPage isDarkMode={isDarkMode} onNavigate={handleNavigate} />}
           {currentPage === 'contact' && <ContactPage isDarkMode={isDarkMode} onNavigate={handleNavigate} />}
           {currentPage === 'faq' && <FAQPage isDarkMode={isDarkMode} onNavigate={handleNavigate} />}
-          {currentPage === 'output' && <OutputPage isDarkMode={isDarkMode} onNavigate={handleNavigate} onGoBack={navigationHistory.length > 1 ? handleGoBack : undefined} />}
+          {currentPage === 'output' && <OutputPage isDarkMode={isDarkMode} onNavigate={handleNavigate} />}
         </div>
       </div>
     </ClickSpark>

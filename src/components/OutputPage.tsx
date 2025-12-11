@@ -19,7 +19,6 @@ import { ChartAreaGradient } from './charts/ChartAreaGradient';
 interface OutputPageProps {
   isDarkMode: boolean;
   onNavigate: (page: string) => void;
-  onGoBack?: () => void;
 }
 
 // Helper function to validate and sanitize taxonomy summary data
@@ -105,7 +104,7 @@ const transformBackendData = (rawData: any) => {
   return transformed;
 };
 
-export default function OutputPage({ isDarkMode, onNavigate, onGoBack }: OutputPageProps) {
+export default function OutputPage({ isDarkMode, onNavigate }: OutputPageProps) {
   const [selectedTab, setSelectedTab] = useState<'embedding' | 'clusters'>('embedding');
   const [selectedSequence, setSelectedSequence] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -271,22 +270,6 @@ export default function OutputPage({ isDarkMode, onNavigate, onGoBack }: OutputP
 
   return (
     <div className="min-h-screen">
-      {/* Previous Button */}
-      {onGoBack && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <button
-            onClick={onGoBack}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              isDarkMode
-                ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
-                : 'bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
-            }`}
-          >
-            <ChevronRight className="w-4 h-4 rotate-180" />
-            Previous
-          </button>
-        </div>
-      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
