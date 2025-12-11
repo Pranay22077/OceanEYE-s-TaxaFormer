@@ -109,7 +109,12 @@ Contributions, issues, and feature requests are welcome!
 
 ## 👥 Authors
 
-Your Name - [GitHub](https://github.com/YOUR_USERNAME)
+Pranay Gadh - [Pranay22077] (https://github.com/Pranay22077)
+Shaurya Sinha - [Shaurya-Sinha3301] (https://github.com/Shaurya-Sinha3301)
+Rishabh Ranjan Singh - [Rishabh1925] (https://github.com/Rishabh1925) 
+Raja Rathor - [Raja-89] (https://github.com/Raja-89)
+Satyam Tiwari - [Satyam-Tiwari-10] (https://github.com/Satyam-Tiwari-10)
+Priyanshi Sharma - [Priyanshi-Sharma-279] (https://github.com/Priyanshi-Sharma-279)
 
 ## 🙏 Acknowledgments
 
